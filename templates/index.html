@@ -1,0 +1,164 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeAlpha URL Shortener</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #eef2ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: white;
+            width: 90%;
+            max-width: 500px;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            color: #4338ca;
+        }
+
+        p {
+            color: #555;
+        }
+
+        input {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 13px;
+            margin: 15px 0;
+            border: 1px solid #ccc;
+            border-radius: 7px;
+            font-size: 15px;
+        }
+
+        button {
+            background: #4338ca;
+            color: white;
+            border: none;
+            padding: 13px 20px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #312e81;
+        }
+
+        #result {
+            margin-top: 20px;
+            overflow-wrap: anywhere;
+        }
+
+        #result a {
+            color: #4338ca;
+        }
+
+        .error {
+            color: #dc2626;
+        }
+
+        .success {
+            color: #15803d;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>CodeAlpha URL Shortener</h1>
+
+        <p>Turn your long URLs into short links!</p>
+
+        <form id="urlForm">
+            <input
+                type="url"
+                id="urlInput"
+                placeholder="Enter your long URL"
+                required
+            >
+
+            <button type="submit">Shorten URL</button>
+        </form>
+
+        <div id="result" aria-live="polite"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById("urlForm");
+        const result = document.getElementById("result");
+
+        form.addEventListener("submit", async function (event) {
+            event.preventDefault();
+
+            const url = document.getElementById("urlInput").value.trim();
+
+            result.textContent = "Creating your short URL...";
+
+            try {
+                const response = await fetch("/shorten", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    result.className = "error";
+                    result.textContent = data.error || "Something went wrong.";
+                    return;
+                }
+
+                result.className = "success";
+
+                const message = document.createElement("p");
+                message.textContent = "Your short URL is ready:";
+
+                const link = document.createElement("a");
+                link.href = data.short_url;
+                link.textContent = data.short_url;
+                link.target = "_blank";
+                link.rel = "noopener noreferrer";
+
+                const copyButton = document.createElement("button");
+                copyButton.textContent = "Copy Link";
+                copyButton.style.marginTop = "12px";
+
+                copyButton.addEventListener("click", async function () {
+                    try {
+                        await navigator.clipboard.writeText(data.short_url);
+                        copyButton.textContent = "Copied!";
+                    } catch {
+                        result.querySelector("a").focus();
+                        copyButton.textContent = "Select the link to copy";
+                    }
+                });
+
+                result.replaceChildren(message, link, document.createElement("br"), copyButton);
+
+            } catch (error) {
+                result.className = "error";
+                result.textContent = "Unable to connect to the server. Please try again.";
+            }
+        });
+    </script>
+</body>
+</html>
+```
